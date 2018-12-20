@@ -150,7 +150,7 @@ class CalendarDay extends React.PureComponent {
         onKeyDown={(e) => { this.onKeyDown(day, e); }}
         tabIndex={tabIndex}
       >
-        {renderDayContents ? renderDayContents(day, modifiers) : day.format('D')}
+        <div className="date-circle">{renderDayContents ? renderDayContents(day, modifiers) : day.format('D')}</div>
       </td>
     );
   }
