@@ -28,15 +28,19 @@ import {
 } from '../constants';
 
 const propTypes = forbidExtraProps({
+  children: PropTypes.node,
+
   startDate: momentPropTypes.momentObj,
   startDateId: PropTypes.string,
   startDatePlaceholderText: PropTypes.string,
   isStartDateFocused: PropTypes.bool,
+  startDateAriaLabel: PropTypes.string,
 
   endDate: momentPropTypes.momentObj,
   endDateId: PropTypes.string,
   endDatePlaceholderText: PropTypes.string,
   isEndDateFocused: PropTypes.bool,
+  endDateAriaLabel: PropTypes.string,
 
   screenReaderMessage: PropTypes.string,
   showClearDates: PropTypes.bool,
@@ -58,6 +62,7 @@ const propTypes = forbidExtraProps({
   withFullScreenPortal: PropTypes.bool,
   minimumNights: nonNegativeInteger,
   isOutsideRange: PropTypes.func,
+  isDayBlocked: PropTypes.func,
   displayFormat: PropTypes.oneOfType([PropTypes.string, PropTypes.func]),
 
   onFocusChange: PropTypes.func,
@@ -80,15 +85,19 @@ const propTypes = forbidExtraProps({
 });
 
 const defaultProps = {
+  children: null,
+
   startDate: null,
   startDateId: START_DATE,
   startDatePlaceholderText: 'Start Date',
   isStartDateFocused: false,
+  startDateAriaLabel: undefined,
 
   endDate: null,
   endDateId: END_DATE,
   endDatePlaceholderText: 'End Date',
   isEndDateFocused: false,
+  endDateAriaLabel: undefined,
 
   screenReaderMessage: '',
   showClearDates: false,
@@ -109,7 +118,8 @@ const defaultProps = {
   reopenPickerOnClearDates: false,
   withFullScreenPortal: false,
   minimumNights: 1,
-  isOutsideRange: day => !isInclusivelyAfterDay(day, moment()),
+  isOutsideRange: (day) => !isInclusivelyAfterDay(day, moment()),
+  isDayBlocked: () => false,
   displayFormat: () => moment.localeData().longDateFormat('L'),
 
   onFocusChange() {},
@@ -159,6 +169,7 @@ export default class DateRangePickerInputController extends React.PureComponent 
     const {
       startDate,
       isOutsideRange,
+      isDayBlocked,
       minimumNights,
       keepOpenOnDateSelect,
       onDatesChange,
@@ -167,7 +178,7 @@ export default class DateRangePickerInputController extends React.PureComponent 
     const endDate = toMomentObject(endDateString, this.getDisplayFormat());
 
     const isEndDateValid = endDate
-      && !isOutsideRange(endDate)
+      && !isOutsideRange(endDate) && !isDayBlocked(endDate)
       && !(startDate && isBeforeDay(endDate, startDate.clone().add(minimumNights, 'days')));
     if (isEndDateValid) {
       onDatesChange({ startDate, endDate });
@@ -202,6 +213,7 @@ export default class DateRangePickerInputController extends React.PureComponent 
     let { endDate } = this.props;
     const {
       isOutsideRange,
+      isDayBlocked,
       minimumNights,
       onDatesChange,
       onFocusChange,
@@ -212,7 +224,7 @@ export default class DateRangePickerInputController extends React.PureComponent 
     const isEndDateBeforeStartDate = startDate
       && isBeforeDay(endDate, startDate.clone().add(minimumNights, 'days'));
     const isStartDateValid = startDate
-      && !isOutsideRange(startDate)
+      && !isOutsideRange(startDate) && !isDayBlocked(startDate)
       && !(disabled === END_DATE && isEndDateBeforeStartDate);
 
     if (isStartDateValid) {
@@ -232,6 +244,7 @@ export default class DateRangePickerInputController extends React.PureComponent 
 
   onStartDateFocus() {
     const { disabled, onFocusChange } = this.props;
+
     if (!disabled || disabled === END_DATE) {
       onFocusChange(START_DATE);
     }
@@ -260,13 +273,16 @@ export default class DateRangePickerInputController extends React.PureComponent 
 
   render() {
     const {
+      children,
       startDate,
       startDateId,
       startDatePlaceholderText,
       isStartDateFocused,
+      startDateAriaLabel,
       endDate,
       endDateId,
       endDatePlaceholderText,
+      endDateAriaLabel,
       isEndDateFocused,
       screenReaderMessage,
       showClearDates,
@@ -301,10 +317,12 @@ export default class DateRangePickerInputController extends React.PureComponent 
         startDateId={startDateId}
         startDatePlaceholderText={startDatePlaceholderText}
         isStartDateFocused={isStartDateFocused}
+        startDateAriaLabel={startDateAriaLabel}
         endDate={endDateString}
         endDateId={endDateId}
         endDatePlaceholderText={endDatePlaceholderText}
         isEndDateFocused={isEndDateFocused}
+        endDateAriaLabel={endDateAriaLabel}
         isFocused={isFocused}
         disabled={disabled}
         required={required}
@@ -322,7 +340,6 @@ export default class DateRangePickerInputController extends React.PureComponent 
         onStartDateShiftTab={this.onClearFocus}
         onEndDateChange={this.onEndDateChange}
         onEndDateFocus={this.onEndDateFocus}
-        onEndDateTab={this.onClearFocus}
         showClearDates={showClearDates}
         onClearDates={this.clearDates}
         screenReaderMessage={screenReaderMessage}
@@ -334,7 +351,9 @@ export default class DateRangePickerInputController extends React.PureComponent 
         small={small}
         regular={regular}
         verticalSpacing={verticalSpacing}
-      />
+      >
+        {children}
+      </DateRangePickerInput>
     );
   }
 }

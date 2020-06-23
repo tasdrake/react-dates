@@ -10,29 +10,39 @@ import {
 } from '../src/constants';
 
 const TestPrevIcon = () => (
-  <span
+  <div
     style={{
       border: '1px solid #dce0e0',
       backgroundColor: '#fff',
       color: '#484848',
+      left: '22px',
       padding: '3px',
+      position: 'absolute',
+      top: '20px',
+      width: '40px',
     }}
+    tabIndex="0"
   >
     Prev
-  </span>
+  </div>
 );
 
 const TestNextIcon = () => (
-  <span
+  <div
     style={{
       border: '1px solid #dce0e0',
       backgroundColor: '#fff',
       color: '#484848',
       padding: '3px',
+      position: 'absolute',
+      right: '22px',
+      top: '20px',
+      width: '40px',
     }}
+    tabIndex="0"
   >
     Next
-  </span>
+  </div>
 );
 
 const TestCustomInfoPanel = () => (
@@ -46,6 +56,54 @@ const TestCustomInfoPanel = () => (
     &#x2755; Some useful info here
   </div>
 );
+
+function renderNavPrevButton(buttonProps) {
+  const {
+    ariaLabel,
+    disabled,
+    onClick,
+    onKeyUp,
+    onMouseUp,
+  } = buttonProps;
+
+  return (
+    <button
+      aria-label={ariaLabel}
+      disabled={disabled}
+      onClick={onClick}
+      onKeyUp={onKeyUp}
+      onMouseUp={onMouseUp}
+      style={{ position: 'absolute', top: 23, left: 22 }}
+      type="button"
+    >
+    &lsaquo; Prev
+    </button>
+  );
+}
+
+function renderNavNextButton(buttonProps) {
+  const {
+    ariaLabel,
+    disabled,
+    onClick,
+    onKeyUp,
+    onMouseUp,
+  } = buttonProps;
+
+  return (
+    <button
+      aria-label={ariaLabel}
+      disabled={disabled}
+      onClick={onClick}
+      onKeyUp={onKeyUp}
+      onMouseUp={onMouseUp}
+      style={{ position: 'absolute', top: 23, right: 22 }}
+      type="button"
+    >
+          Next &rsaquo;
+    </button>
+  );
+}
 
 storiesOf('DayPicker', module)
   .add('default', withInfo()(() => (
@@ -123,9 +181,15 @@ storiesOf('DayPicker', module)
       navNext={<TestNextIcon />}
     />
   )))
+  .add('with custom navigation buttons', withInfo()(() => (
+    <DayPicker
+      renderNavPrevButton={renderNavPrevButton}
+      renderNavNextButton={renderNavNextButton}
+    />
+  )))
   .add('with custom details', withInfo()(() => (
     <DayPicker
-      renderDayContents={day => (day.day() % 6 === 5 ? '😻' : day.format('D'))}
+      renderDayContents={(day) => (day.day() % 6 === 5 ? '😻' : day.format('D'))}
     />
   )))
   .add('vertical with fixed-width container', withInfo()(() => (
@@ -140,6 +204,13 @@ storiesOf('DayPicker', module)
     <DayPicker
       renderCalendarInfo={() => (
         <TestCustomInfoPanel />
+      )}
+    />
+  )))
+  .add('with custom week header text', withInfo()(() => (
+    <DayPicker
+      renderWeekHeaderElement={(day) => (
+        <strong style={{ color: '#FE01E5' }}><small>{day.toUpperCase()}</small></strong>
       )}
     />
   )))

@@ -3,6 +3,7 @@ import { expect } from 'chai';
 import sinon from 'sinon-sandbox';
 import { shallow } from 'enzyme';
 import moment from 'moment';
+import raf from 'raf';
 
 import { BLOCKED_MODIFIER } from '../../src/constants';
 import CalendarDay, { PureCalendarDay } from '../../src/components/CalendarDay';
@@ -27,7 +28,7 @@ describe('CalendarDay', () => {
 
     it('contains arbitrary content if renderDay is provided', () => {
       const dayName = moment().format('dddd');
-      const renderDay = day => day.format('dddd');
+      const renderDay = (day) => day.format('dddd');
       const wrapper = shallow(<CalendarDay renderDayContents={renderDay} />).dive();
       expect(wrapper.text()).to.equal(dayName);
     });
@@ -55,12 +56,14 @@ describe('CalendarDay', () => {
 
     describe('aria-label', () => {
       const phrases = {};
-      const day = moment('10/10/2017');
+      const day = moment('10/10/2017', 'MM/DD/YYYY');
 
       beforeEach(() => {
         phrases.chooseAvailableDate = sinon.stub().returns('chooseAvailableDate text');
         phrases.dateIsSelected = sinon.stub().returns('dateIsSelected text');
         phrases.dateIsUnavailable = sinon.stub().returns('dateIsUnavailable text');
+        phrases.dateIsSelectedAsStartDate = sinon.stub().returns('dateIsSelectedAsStartDate text');
+        phrases.dateIsSelectedAsEndDate = sinon.stub().returns('dateIsSelectedAsEndDate text');
       });
 
       it('is formatted with the chooseAvailableDate phrase function when day is available', () => {
@@ -78,21 +81,59 @@ describe('CalendarDay', () => {
       });
 
       it('is formatted with the dateIsSelected phrase function when day is selected', () => {
-        const selectedModifiers = new Set(['selected', 'selected-start', 'selected-end']);
+        const modifiers = new Set(['selected']);
 
-        selectedModifiers.forEach((selectedModifier) => {
-          const modifiers = new Set([selectedModifier]);
+        const wrapper = shallow((
+          <CalendarDay
+            modifiers={modifiers}
+            phrases={phrases}
+            day={day}
+          />
+        )).dive();
 
-          const wrapper = shallow((
-            <CalendarDay
-              modifiers={modifiers}
-              phrases={phrases}
-              day={day}
-            />
-          )).dive();
+        expect(wrapper.prop('aria-label')).to.equal('dateIsSelected text');
+      });
 
-          expect(wrapper.prop('aria-label')).to.equal('dateIsSelected text');
-        });
+      it('is formatted with the dateIsSelected phrase function when day is selected in a span', () => {
+        const modifiers = new Set(['selected-span']);
+
+        const wrapper = shallow((
+          <CalendarDay
+            modifiers={modifiers}
+            phrases={phrases}
+            day={day}
+          />
+        )).dive();
+
+        expect(wrapper.prop('aria-label')).to.equal('dateIsSelected text');
+      });
+
+      it('is formatted with the dateIsSelectedAsStartDate phrase function when day is selected as the start date', () => {
+        const modifiers = new Set().add(BLOCKED_MODIFIER).add('selected-start');
+
+        const wrapper = shallow((
+          <CalendarDay
+            modifiers={modifiers}
+            phrases={phrases}
+            day={day}
+          />
+        )).dive();
+
+        expect(wrapper.prop('aria-label')).to.equal('dateIsSelectedAsStartDate text');
+      });
+
+      it('is formatted with the dateIsSelectedAsEndDate phrase function when day is selected as the end date', () => {
+        const modifiers = new Set().add(BLOCKED_MODIFIER).add('selected-end');
+
+        const wrapper = shallow((
+          <CalendarDay
+            modifiers={modifiers}
+            phrases={phrases}
+            day={day}
+          />
+        )).dive();
+
+        expect(wrapper.prop('aria-label')).to.equal('dateIsSelectedAsEndDate text');
       });
 
       it('is formatted with the dateIsUnavailable phrase function when day is not available', () => {
@@ -125,7 +166,7 @@ describe('CalendarDay', () => {
     });
 
     describe('event handlers', () => {
-      const day = moment('10/10/2017');
+      const day = moment('10/10/2017', 'MM/DD/YYYY');
 
       let wrapper;
       beforeEach(() => {
@@ -163,7 +204,7 @@ describe('CalendarDay', () => {
   });
 
   describe('#onKeyDown', () => {
-    const day = moment('10/10/2017');
+    const day = moment('10/10/2017', 'MM/DD/YYYY');
 
     let onDayClick;
     let wrapper;
@@ -195,6 +236,23 @@ describe('CalendarDay', () => {
       const event = { key: 'Shift' };
       wrapper.instance().onKeyDown(day, event);
       expect(onDayClick).to.have.property('callCount', 0);
+    });
+  });
+
+  describe('#componentDidUpdate', () => {
+    it('focuses buttonRef after a delay when isFocused, tabIndex is 0, and tabIndex was not 0', () => {
+      const wrapper = shallow(<CalendarDay isFocused tabIndex={0} />).dive();
+      const focus = sinon.spy();
+      wrapper.instance().buttonRef = { focus };
+      wrapper.instance().componentDidUpdate({ isFocused: true, tabIndex: -1 });
+      expect(focus.callCount).to.eq(0);
+
+      return new Promise((resolve) => {
+        raf(() => {
+          expect(focus.callCount).to.eq(1);
+          resolve();
+        });
+      });
     });
   });
 

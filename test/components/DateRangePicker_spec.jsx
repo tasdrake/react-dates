@@ -110,6 +110,16 @@ describe('DateRangePicker', () => {
       });
     });
 
+    describe('props.isDayBlocked is defined', () => {
+      it('should pass props.isDayBlocked to <DateRangePickerInputController>', () => {
+        const isDayBlocked = sinon.stub();
+        const wrapper = shallow((
+          <DateRangePicker {...requiredProps} isDayBlocked={isDayBlocked} />
+        )).dive();
+        expect(wrapper.find(DateRangePickerInputController).prop('isDayBlocked')).to.equal(isDayBlocked);
+      });
+    });
+
     describe('props.appendToBody', () => {
       it('renders <DayPickerRangeController> inside <Portal>', () => {
         const wrapper = shallow((
@@ -522,7 +532,7 @@ describe('DateRangePicker', () => {
     });
   });
 
-  describe('#onDayPickerBlur', () => {
+  describeIfWindow('#onDayPickerBlur', () => {
     it('sets state.isDateRangePickerInputFocused to true', () => {
       const wrapper = shallow((
         <DateRangePicker
@@ -566,6 +576,36 @@ describe('DateRangePicker', () => {
       });
       wrapper.instance().onDayPickerBlur();
       expect(wrapper.state().showKeyboardShortcuts).to.equal(false);
+    });
+
+    it('tabbing out with keyboard behaves as an outside click', () => {
+      const target = sinon.stub();
+      const onOutsideClick = sinon.stub();
+      const dayPickerContainer = {
+        addEventListener: sinon.stub(),
+        contains: sinon.stub().returns(false),
+      };
+      const wrapper = shallow((<DateRangePicker {...requiredProps} />)).dive();
+      wrapper.instance().setDayPickerContainerRef(dayPickerContainer);
+      wrapper.instance().onOutsideClick = onOutsideClick;
+      expect(onOutsideClick.callCount).to.equal(0);
+      wrapper.instance().onDayPickerFocusOut({ key: 'Tab', shiftKey: false, target });
+      expect(onOutsideClick.callCount).to.equal(1);
+    });
+
+
+    it('tabbing within itself does not behave as an outside click', () => {
+      const target = sinon.stub();
+      const onOutsideClick = sinon.stub();
+      const dayPickerContainer = {
+        addEventListener: sinon.stub(),
+        contains: sinon.stub().returns(true),
+      };
+      const wrapper = shallow((<DateRangePicker {...requiredProps} />)).dive();
+      wrapper.instance().setDayPickerContainerRef(dayPickerContainer);
+      wrapper.instance().onOutsideClick = onOutsideClick;
+      wrapper.instance().onDayPickerFocusOut({ key: 'Tab', shiftKey: false, target });
+      expect(onOutsideClick.callCount).to.equal(0);
     });
   });
 
@@ -666,6 +706,78 @@ describe('DateRangePicker', () => {
         )).dive();
         const dayPicker = wrapper.find(DayPickerRangeController);
         expect(dayPicker.props().initialVisibleMonth().isSame(today, 'day')).to.equal(true);
+      });
+    });
+  });
+
+  describe('dateOffsets', () => {
+    describe('startDateOffset is passed in', () => {
+      it('Should pass startDateOffset to DayPickerRangeController', () => {
+        const startDate = moment('2018-10-17');
+        const onDatesChangeStub = sinon.stub();
+        const wrapper = shallow((
+          <DateRangePicker
+            {...requiredProps}
+            startDateOffset={(date) => date.subtract(5, 'days')}
+            onDatesChange={onDatesChangeStub}
+            focusedInput={START_DATE}
+          />
+        )).dive();
+
+        const dayPicker = wrapper.find(DayPickerRangeController);
+        const dayPickerStartDateOffset = dayPicker.props().startDateOffset(startDate);
+
+        expect(dayPickerStartDateOffset.format()).to.equal(startDate.format());
+      });
+    });
+
+    describe('endDateOffset is passed in', () => {
+      it('Should pass endDateOffset to DayPickerRangeController', () => {
+        const endDate = moment('2018-10-17', 'YYYY-MM-DD');
+        const onDatesChangeStub = sinon.stub();
+        const wrapper = shallow((
+          <DateRangePicker
+            {...requiredProps}
+            endDateOffset={(date) => date.subtract(5, 'days')}
+            onDatesChange={onDatesChangeStub}
+            focusedInput={START_DATE}
+          />
+        )).dive();
+
+        const dayPicker = wrapper.find(DayPickerRangeController);
+        const dayPickerEndDateOffset = dayPicker.props().endDateOffset(endDate);
+
+        expect(dayPickerEndDateOffset.format()).to.equal(endDate.format());
+      });
+    });
+  });
+
+  describe('minDate and maxDate props', () => {
+    describe('minDate is passed in', () => {
+      it('Should pass minDate to DayPickerRangeController', () => {
+        const minDate = moment('2018-10-19');
+        const wrapper = shallow((
+          <DateRangePicker
+            {...requiredProps}
+            focusedInput={START_DATE}
+            minDate={minDate}
+          />
+        )).dive();
+        expect(wrapper.find(DayPickerRangeController).props().minDate).to.equal(minDate);
+      });
+    });
+
+    describe('maxDate is passed in', () => {
+      it('Should pass maxDate to DayPickerRangeController', () => {
+        const maxDate = moment('2018-12-19');
+        const wrapper = shallow((
+          <DateRangePicker
+            {...requiredProps}
+            focusedInput={START_DATE}
+            maxDate={maxDate}
+          />
+        )).dive();
+        expect(wrapper.find(DayPickerRangeController).props().maxDate).to.equal(maxDate);
       });
     });
   });

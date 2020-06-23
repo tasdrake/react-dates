@@ -4,8 +4,23 @@ import { shallow } from 'enzyme';
 import sinon from 'sinon-sandbox';
 
 import SingleDatePickerInput from '../../src/components/SingleDatePickerInput';
+import DateInput from '../../src/components/DateInput';
+import { SingleDatePickerInputPhrases } from '../../src/defaultPhrases';
 
 describe('SingleDatePickerInput', () => {
+  describe('render', () => {
+    it('should render any children provided', () => {
+      const Child = () => <div>CHILD</div>;
+
+      const wrapper = shallow((
+        <SingleDatePickerInput id="date">
+          <Child />
+        </SingleDatePickerInput>
+      )).dive();
+      expect(wrapper.find(Child)).to.have.lengthOf(1);
+    });
+  });
+
   describe('clear date', () => {
     describe('props.showClearDate is falsy', () => {
       it('does not render a clear date button', () => {
@@ -79,6 +94,35 @@ describe('SingleDatePickerInput', () => {
         const clearDateWrapper = wrapper.find('button');
         clearDateWrapper.simulate('click');
         expect(onClearDateSpy).to.have.property('called', true);
+      });
+    });
+  });
+
+  describe('screen reader message', () => {
+    describe('props.screenReaderMessage is falsy', () => {
+      it('default value is passed to DateInput', () => {
+        const wrapper = shallow(<SingleDatePickerInput id="date" />).dive();
+        const dateInput = wrapper.find(DateInput);
+        expect(dateInput).to.have.lengthOf(1);
+        expect(dateInput.props()).to.have.property(
+          'screenReaderMessage',
+          SingleDatePickerInputPhrases.keyboardForwardNavigationInstructions,
+        );
+      });
+    });
+
+    describe('props.screenReaderMessage is truthy', () => {
+      it('prop value is passed to DateInput', () => {
+        const message = 'test message';
+        const wrapper = shallow((
+          <SingleDatePickerInput
+            id="date"
+            screenReaderMessage={message}
+          />
+        )).dive();
+        const dateInput = wrapper.find(DateInput);
+        expect(dateInput).to.have.lengthOf(1);
+        expect(dateInput.props()).to.have.property('screenReaderMessage', message);
       });
     });
   });

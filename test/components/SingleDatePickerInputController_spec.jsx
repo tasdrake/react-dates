@@ -28,6 +28,18 @@ describe('SingleDatePickerInputController', () => {
     expect(wrapper.find(SingleDatePickerInput)).to.have.lengthOf(1);
   });
 
+  it('should pass children to the SingleDatePickerInput', () => {
+    const Child = () => <div>CHILD</div>;
+
+    const wrapper = shallow((
+      <SingleDatePickerInputController id="date">
+        <Child />
+      </SingleDatePickerInputController>));
+
+    expect(wrapper.find(SingleDatePickerInput)).to.have.property('children');
+    expect(wrapper.find(Child)).to.have.lengthOf(1);
+  });
+
   describe('#onChange', () => {
     describe('valid future date string', () => {
       const futureDateString = moment().add(10, 'days').format('YYYY-MM-DD');
@@ -191,7 +203,7 @@ describe('SingleDatePickerInputController', () => {
 
     describe('date string outside range', () => {
       const isOutsideRangeStub = sinon.stub().returns(true);
-      const todayDateString = today.toISOString();
+      const todayDateString = today.format('DD/MM/YYYY');
 
       it('calls props.onDateChange once', () => {
         const onDateChangeStub = sinon.stub();
@@ -233,6 +245,39 @@ describe('SingleDatePickerInputController', () => {
         ));
         wrapper.instance().onChange(todayDateString);
         expect(onFocusChangeStub.callCount).to.equal(0);
+      });
+    });
+
+    describe('date string is blocked', () => {
+      const isDayBlocked = sinon.stub().returns(true);
+      const todayDateString = today.format('DD/MM/YYYY');
+
+      it('calls props.onDateChange once', () => {
+        const onDateChangeStub = sinon.stub();
+        const wrapper = shallow((
+          <SingleDatePickerInputController
+            id="date"
+            onDateChange={onDateChangeStub}
+            onFocusChange={() => {}}
+            isDayBlocked={isDayBlocked}
+          />
+        ));
+        wrapper.instance().onChange(todayDateString);
+        expect(onDateChangeStub.callCount).to.equal(1);
+      });
+
+      it('calls props.onDateChange with null as arg', () => {
+        const onDateChangeStub = sinon.stub();
+        const wrapper = shallow((
+          <SingleDatePickerInputController
+            id="date"
+            onDateChange={onDateChangeStub}
+            onFocusChange={() => {}}
+            isDayBlocked={isDayBlocked}
+          />
+        ));
+        wrapper.instance().onChange(todayDateString);
+        expect(onDateChangeStub.getCall(0).args[0]).to.equal(null);
       });
     });
   });
